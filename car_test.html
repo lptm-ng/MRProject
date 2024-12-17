@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Oculus Quest Car Drive</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="car-controller.js"></script>
+    <script>
+        AFRAME.registerComponent('camera-control', {
+            tick: function () {
+                const car = document.getElementById('car');
+                const camera = this.el;
+                const rightController = document.querySelector('[right-controller]').components['oculus-quest-controls'];
+    
+                if (car && rightController) {
+                     const carPosition = car.object3D.position;
+    
+                     // Camera following logic
+                     const offset = new THREE.Vector3(0, 3, 8); 
+                     offset.applyQuaternion(car.object3D.quaternion);
+                     const desiredPosition = new THREE.Vector3().copy(carPosition).add(offset);
+                     camera.object3D.position.lerp(desiredPosition,0.05);
+    
+                     // Camera Rotation based on right controller
+                    const rightJoystick = rightController.thumbstick
+                    camera.object3D.rotation.y -= rightJoystick.x*2*Math.PI/360
+                 }
+            }
+        });
+    </script>
+</head>
+<body>
+  <a-scene>
+    
+    <a-entity id="camera" camera camera-control></a-entity>
+
+    <a-plane
+        rotation="-90 0 0"
+        width="100"
+        height="100"
+        color="#777"
+        shadow
+    ></a-plane>
+
+    <a-entity id="car" gltf-model="url(assets/low_poly_car.glb)" position="0 0.5 0" rotation="0 180 0" scale="0.1 0.1 0.1" shadow car-controller>
+    </a-entity>
+
+
+    <a-entity oculus-quest-controls="hand:left;" left-controller></a-entity>
+    <a-entity oculus-quest-controls="hand:right;" right-controller></a-entity>
+
+     <a-entity light="type: ambient; color: #BBB"></a-entity>
+     <a-entity light="type: directional; color: #FFF; intensity: 0.6" position="-0.5 1 1"></a-entity>
+  </a-scene>
+</body>
+</html>
