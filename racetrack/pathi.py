@@ -1,4 +1,3 @@
-#Copyright 2025 - Caspar Moritz Klein
 import random
 
 # Makes a racetrack map and returns the coordinates of the path the track takes
