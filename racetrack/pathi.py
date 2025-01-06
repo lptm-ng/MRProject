@@ -143,4 +143,4 @@ def is_corner(a,b,c):
 
 
 if __name__ == "__main__":
-    make_loop(8,5,True,False)
+    make_loop(8,5,True,True)
