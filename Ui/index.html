@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Hauptseite</title>
+  <style>
+    #aframe-container {
+      display: none;
+      margin-top: 20px;
+    }
+    iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Hauptseite</h1>
+  <button id="show-aframe">A-Frame Car Test anzeigen</button>
+
+  <div id="aframe-container">
+    <iframe id="aframe-iframe" src="car_test.html"></iframe>
+  </div>
+
+  <script>
+    document.getElementById('show-aframe').addEventListener('click', () => {
+      const container = document.getElementById('aframe-container');
+      container.style.display = 'block';
+    });
+  </script>
+</body>
+</html>
