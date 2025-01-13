@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Three.js Button</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.155.0/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three-mesh-ui@latest/build/three-mesh-ui.min.js"></script>
+</head>
+<body>
+  <script>
+    // Set up Three.js
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Add lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1).normalize();
+    scene.add(directionalLight);
+
+    // Create a Panel
+    const panel = new ThreeMeshUI.Block({
+      width: 1,
+      height: 0.5,
+      padding: 0.05,
+      justifyContent: 'center',
+      alignContent: 'center',
+      fontFamily: "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxM.woff", // Roboto font
+      backgroundColor: new THREE.Color(0x333333),
+    });
+
+    panel.position.set(0, 0, -1.5); // Stelle sicher, dass das Panel vor der Kamera liegt
+    camera.position.set(0, 0, 2);   // Kamera weiter nach hinten setzen
+
+    scene.add(panel);
+
+
+    // Create a Button
+    const button = new ThreeMeshUI.Block({
+      width: 0.8,
+      height: 0.2,
+      justifyContent: 'center',
+      alignContent: 'center',
+      offset: 0.05,
+      margin: 0.02,
+      backgroundColor: new THREE.Color(0x666666),
+      backgroundOpacity: 0.8,
+    });
+
+    // Add text to the Button
+    const buttonText = new ThreeMeshUI.Text({
+      content: 'Click Me',
+      fontSize: 0.05,
+      fontColor: new THREE.Color(0xffffff), // White text
+    });
+
+    button.add(buttonText);
+    panel.add(button);
+
+    // Raycaster for interaction
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    function onMouseClick(event) {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(button, true);
+
+      if (intersects.length > 0) {
+        alert('Button Clicked!');
+      }
+    }
+
+    window.addEventListener('click', onMouseClick);
+
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      ThreeMeshUI.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
