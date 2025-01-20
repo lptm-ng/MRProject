@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Racetrack Hittest</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="stylesheet" href="/style.css" />
+
+  <!-- IMPORTANT: PLACE YOUR SDK SCRIPT TAG BELOW IF FORKING  -->
+
+  <script src="https://launchar.app/sdk/v1?key=PgCkcRz0dyNiU3cWrOBw3PIB7cFYnuu8&redirect=true"></script>
+
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+  <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
+
+  <script>
+    // Define a few custom components useful for AR mode. While these are somewhat reusable,
+    // I recommend checking if there are officially supported alternatives before copying
+    // these into new projects.
+
+    // See also https://github.com/aframevr/aframe/pull/4356
+    AFRAME.registerComponent("hide-in-ar-mode", {
+      // Set this object invisible while in AR mode.
+      init: function () {
+        this.el.sceneEl.addEventListener("enter-vr", (ev) => {
+          this.wasVisible = this.el.getAttribute("visible");
+          if (this.el.sceneEl.is("ar-mode")) {
+            this.el.setAttribute("visible", false);
+          }
+        });
+        this.el.sceneEl.addEventListener("exit-vr", (ev) => {
+          if (this.wasVisible) this.el.setAttribute("visible", true);
+        });
+      },
+    });
+
+    
+    AFRAME.registerComponent("ar-shadows", {
+      // Swap an object's material to a transparent shadows-only material while
+      // in AR mode. Intended for use with a ground plane. The object is also
+      // set visible while in AR mode, this is useful if it's hidden in other
+      // modes due to them using a 3D environment.
+      schema: {
+        opacity: { default: 0.3 },
+      },
+      init: function () {
+        this.el.sceneEl.addEventListener("enter-vr", (ev) => {
+          this.wasVisible = this.el.getAttribute("visible");
+          if (this.el.sceneEl.is("ar-mode")) {
+            this.savedMaterial = this.el.object3D.children[0].material;
+            this.el.object3D.children[0].material =
+              new THREE.ShadowMaterial();
+            this.el.object3D.children[0].material.opacity = this.data.opacity;
+            this.el.setAttribute("visible", true);
+          }
+        });
+        this.el.sceneEl.addEventListener("exit-vr", (ev) => {
+          if (this.savedMaterial) {
+            this.el.object3D.children[0].material = this.savedMaterial;
+            this.savedMaterial = null;
+          }
+          if (!this.wasVisible) this.el.setAttribute("visible", false);
+        });
+      },
+    });
+  </script>
+</head>
+
+<body>
+  <a-scene device-orientation-permission-ui="enabled: false"
+    webxr="requiredFeatures:hit-test,local-floor;referenceSpaceType:local-floor">
+    <a-assets timeout="30000">
+      <img id="racetrack_large" src="Large.png">
+      <img id="racetrack_middle" src="Middle.png">
+      <img id="racetrack_small" src="Small.png">
+
+    </a-assets>
+    <a-camera position="0 1.2 6"></a-camera>
+    <a-ring id="reticle" ar-hit-test-simple rotation="-90 0 0" radius-inner="0.02" radius-outer="0.03">
+      <a-ring color="yellow" radius-inner="0.04" radius-outer="0.05"
+        animation="property: scale; from: 1 1 1; to: 2 2 2; loop: true; dir: alternate"></a-ring>
+      <a-ring color="yellow" radius-inner="0.06" radius-outer="0.07"
+        animation="property: scale; from: 1 1 1; to: 3 3 3; loop: true; dir: alternate"></a-ring>
+    </a-ring>
+    <!-- Environment for 2D and VR viewing. It's auto-hidden in AR mode. -->
+    <a-entity environment="lighting: none; shadow: none; lightPosition: 0 2.15 0" hide-in-ar-mode></a-entity>
+    </a-entity>
+    <a-entity id="container" position="0 0.01 0" scale="0.5 0.5 0.5">
+      <a-plane id="racetrack_l" src="#racetrack_large" height="4" width="4" position="0 0.01 0" rotation="-90 0 0"visible="true" shadow="receive: false"></a-plane>
+      <a-plane id="racetrack_m" src="#racetrack_middle" height="4" width="4" position="0 0.01 0" rotation="-90 0 0" visible="false" shadow="receive: false"></a-plane>
+      <a-plane id="racetrack_s" src="#racetrack_small" height="4" width="4" position="0 0.01 0" rotation="-90 0 0"visible="false"shadow="receive: false"></a-plane>
+      <a-entity id="car" gltf-model="url(bmw-326/cartest.glb)" position="-1 0.03 1.7" rotation="0 90 0"
+        scale="0.0005 0.0005 0.0005" shadow="receive: false"></a-entity>
+    </a-entity>
+    <a-entity light="type: ambient; intensity: 0.5;"></a-entity>
+
+    <!-- controller-->
+    <a-entity oculus-touch-controls="hand: left" id="leftController" class="controller"></a-entity>
+    <a-entity oculus-touch-controls="hand: right" id="rightController" class="controller"></a-entity>
+    <a-light type="directional" light="castShadow: true;
+                      shadowMapHeight: 1024;
+                      shadowMapWidth: 1024;
+                      shadowCameraLeft: -7;
+                      shadowCameraRight: 5;
+                      shadowCameraBottom: -5;
+                      shadowCameraTop: 5;" id="light" target="model" position="-5 3 1.5" intensity="2"></a-light>
+
+    <!-- This shadow-receiving plane is only visible in AR mode. -->
+    <a-plane height="15" width="15" position="0 0 0" rotation="-90 0 0" shadow="receive: true" ar-shadows="opacity: 0.3"
+      visible="false"></a-plane>
+  </a-scene>
+
+  <div id="text">
+    <h1>A-Frame `ar-hit-test-simple` with Ring Reticle</h1>
+    <p>
+      Size: <button id="btn_full">Full</button>
+      <button id="btn_half">1/2</button>
+      <button id="btn_quarter">1/4</button>
+      <button id="btn_tenth">1/10</button>
+
+    </p>
+
+    <p>
+      This requires browser support for immersive-ar WebXR, e.g. an
+      <a href="https://developers.google.com/ar/discover/supported-devices">ARCore-compatible</a>
+      Android or an iOS device using
+      <a href="https://launch.variant3d.com/">Variant Launch</a>
+    </p>
+  </div>
+  <script>
+    function setSize(scale) {
+      document
+        .getElementById("container")
+        .setAttribute("scale", { x: scale, y: scale, z: scale });
+    }
+    document.getElementById("btn_full").onclick = setSize.bind(this, 1);
+    document.getElementById("btn_half").onclick = setSize.bind(this, 0.5);
+    document.getElementById("btn_quarter").onclick = setSize.bind(this, 0.25);
+    document.getElementById('btn_tenth').onclick = setSize.bind(this, 0.1);
+
+  </script>
+  <script>
+    <!-- https://github.com/stspanho/aframe-hit-test/blob/master/index.html -->
+    AFRAME.registerComponent("ar-hit-test-simple", {
+      init: function () {
+        this.xrHitTestSource = null;
+        this.viewerSpace = null;
+        this.refSpace = null;
+
+        this.el.sceneEl.renderer.xr.addEventListener("sessionend", (ev) => {
+          this.viewerSpace = null;
+          this.refSpace = null;
+          this.xrHitTestSource = null;
+        });
+        this.el.sceneEl.renderer.xr.addEventListener("sessionstart", (ev) => {
+          let session = this.el.sceneEl.renderer.xr.getSession();
+
+          let element = this.el;
+          session.addEventListener('select', function () {
+            let position = element.getAttribute('position');
+            document.getElementById('container').setAttribute('position', position);
+          });
+
+          session.requestReferenceSpace("viewer").then((space) => {
+            this.viewerSpace = space;
+            session
+              .requestHitTestSource({ space: this.viewerSpace })
+              .then((hitTestSource) => {
+                this.xrHitTestSource = hitTestSource;
+              });
+          });
+
+          session.requestReferenceSpace("local-floor").then((space) => {
+            this.refSpace = space;
+          });
+        });
+      },
+      tick: function () {
+        if (!this.viewerSpace) return;
+
+        let frame = this.el.sceneEl.frame;
+        let xrViewerPose = frame.getViewerPose(this.refSpace);
+
+        if (this.xrHitTestSource && xrViewerPose) {
+          let hitTestResults = frame.getHitTestResults(this.xrHitTestSource);
+          if (hitTestResults.length > 0) {
+            let pose = hitTestResults[0].getPose(this.refSpace);
+
+            let inputMat = new THREE.Matrix4();
+            inputMat.fromArray(pose.transform.matrix);
+
+            let position = new THREE.Vector3();
+            position.setFromMatrixPosition(inputMat);
+            this.el.setAttribute("position", position);
+          }
+        }
+      },
+    });
+  </script>
+  <script>
+    AFRAME.registerComponent('car-controls', {
+      init: function () {
+        this.el.sceneEl.addEventListener('thumbstickmoved', this.handleThumbstick.bind(this));
+        this.el.addEventListener('axismove', this.brake.bind(this));
+        this.car = document.getElementById('car');
+        this.speed = 0;
+        this.maxSpeed = 0.01;
+        this.acceleration = 0.005;
+        this.brakingForce = 0.02;
+        this.rotationSpeed = 5;
+      },
+      handleThumbstick: function (evt) {
+        const hand = evt.target.getAttribute('oculus-touch-controls').hand;
+        if (hand === 'left') {
+          const thumbstickY = evt.detail.y;
+          // nach vorne fahren mit linken joystick
+          if (thumbstickY < 0) {
+            this.speed = Math.min(this.speed + this.acceleration, this.maxSpeed);
+          } else {
+            this.speed = Math.max(0, this.speed - this.brakingForce)
+          }
+
+          const carRotationY = this.car.getAttribute('rotation').y * Math.PI / 180;
+          const movementZ = -thumbstickY * this.speed;
+          const movementX = (movementZ) * Math.sin(carRotationY);
+          const movementY = 0;
+          const movementZUpdated = (movementZ) * Math.cos(carRotationY);
+          const currentPosition = this.car.getAttribute('position');
+          this.car.setAttribute('position', {
+            x: currentPosition.x + movementX,
+            y: currentPosition.y + movementY,
+            z: currentPosition.z + movementZUpdated
+          });
+        } else if (hand === 'right') {
+          const thumbstickX = evt.detail.x;
+          const turnAmount = -thumbstickX * this.rotationSpeed;
+          const currentRotation = this.car.getAttribute('rotation');
+          this.car.setAttribute('rotation', {
+            x: currentRotation.x,
+            y: currentRotation.y + turnAmount,
+            z: currentRotation.z,
+          });
+
+        }
+      },
+      brake: function (evt) {
+        const hand = evt.target.getAttribute('oculus-touch-controls').hand;
+        if (hand === 'left' && evt.detail.axis[3] < -0.8) {
+          this.speed = Math.max(0, this.speed - this.brakingForce);
+        }
+      }
+    });
+
+    document.getElementById('leftController').setAttribute('car-controls', '');
+    document.getElementById('rightController').setAttribute('car-controls', '');
+
+  </script>
+
+</body>
+
+</html>
