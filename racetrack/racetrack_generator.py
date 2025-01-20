@@ -69,8 +69,8 @@ def generate_map_image(width,height,path):
     return canvas
 
 def do_stuff():
-    w=10
-    h=10
+    w=6
+    h=6
     path=map_gen.make_loop(w,h)
     canvas=generate_map_image(w,h,path)
     canvas.save("racetrack/canvas.png")
