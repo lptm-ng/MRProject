@@ -208,10 +208,10 @@
         this.el.addEventListener('axismove', this.brake.bind(this));
         this.car = document.getElementById('car');
         this.speed = 0;
-        this.maxSpeed = 0.01;
+        this.maxSpeed = 0.006;
         this.acceleration = 0.005;
         this.brakingForce = 0.02;
-        this.rotationSpeed = 5;
+        this.rotationSpeed = 2;
       },
       handleThumbstick: function (evt) {
         const hand = evt.target.getAttribute('oculus-touch-controls').hand;
