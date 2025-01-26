@@ -3,8 +3,14 @@ export default /* glsl */`
 
 	#ifdef USE_LIGHTMAP
 
-		vec4 lightMapTexel = texture2D( lightMap, vLightMapUv );
-		vec3 lightMapIrradiance = lightMapTexel.rgb * lightMapIntensity;
+		vec4 lightMapTexel= texture2D( lightMap, vUv2 );
+		vec3 lightMapIrradiance = lightMapTexelToLinear( lightMapTexel ).rgb * lightMapIntensity;
+
+		#ifndef PHYSICALLY_CORRECT_LIGHTS
+
+			lightMapIrradiance *= PI; // factor of PI should not be present; included here to prevent breakage
+
+		#endif
 
 		irradiance += lightMapIrradiance;
 
@@ -12,7 +18,7 @@ export default /* glsl */`
 
 	#if defined( USE_ENVMAP ) && defined( STANDARD ) && defined( ENVMAP_TYPE_CUBE_UV )
 
-		iblIrradiance += getIBLIrradiance( geometryNormal );
+		iblIrradiance += getLightProbeIndirectIrradiance( /*lightProbe,*/ geometry, maxMipLevel );
 
 	#endif
 
@@ -20,19 +26,11 @@ export default /* glsl */`
 
 #if defined( USE_ENVMAP ) && defined( RE_IndirectSpecular )
 
-	#ifdef USE_ANISOTROPY
+	radiance += getLightProbeIndirectRadiance( /*specularLightProbe,*/ geometry.viewDir, geometry.normal, material.specularRoughness, maxMipLevel );
 
-		radiance += getIBLAnisotropyRadiance( geometryViewDir, geometryNormal, material.roughness, material.anisotropyB, material.anisotropy );
+	#ifdef CLEARCOAT
 
-	#else
-
-		radiance += getIBLRadiance( geometryViewDir, geometryNormal, material.roughness );
-
-	#endif
-
-	#ifdef USE_CLEARCOAT
-
-		clearcoatRadiance += getIBLRadiance( geometryViewDir, geometryClearcoatNormal, material.clearcoatRoughness );
+		clearcoatRadiance += getLightProbeIndirectRadiance( /*specularLightProbe,*/ geometry.viewDir, geometry.clearcoatNormal, material.clearcoatRoughness, maxMipLevel );
 
 	#endif
 

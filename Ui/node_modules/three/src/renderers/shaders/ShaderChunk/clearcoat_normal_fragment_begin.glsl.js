@@ -1,7 +1,7 @@
 export default /* glsl */`
-#ifdef USE_CLEARCOAT
+#ifdef CLEARCOAT
 
-	vec3 clearcoatNormal = nonPerturbedNormal;
+	vec3 clearcoatNormal = geometryNormal;
 
 #endif
 `;

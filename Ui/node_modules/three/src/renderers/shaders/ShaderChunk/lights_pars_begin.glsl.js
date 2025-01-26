@@ -1,12 +1,7 @@
 export default /* glsl */`
 uniform bool receiveShadow;
 uniform vec3 ambientLightColor;
-
-#if defined( USE_LIGHT_PROBES )
-
-	uniform vec3 lightProbe[ 9 ];
-
-#endif
+uniform vec3 lightProbe[ 9 ];
 
 // get the irradiance (radiance convolved with cosine lobe) at the point 'normal' on the unit sphere
 // source: https://graphics.stanford.edu/papers/envmap/envmap.pdf
@@ -35,9 +30,9 @@ vec3 shGetIrradianceAt( in vec3 normal, in vec3 shCoefficients[ 9 ] ) {
 
 }
 
-vec3 getLightProbeIrradiance( const in vec3 lightProbe[ 9 ], const in vec3 normal ) {
+vec3 getLightProbeIrradiance( const in vec3 lightProbe[ 9 ], const in GeometricContext geometry ) {
 
-	vec3 worldNormal = inverseTransformDirection( normal, viewMatrix );
+	vec3 worldNormal = inverseTransformDirection( geometry.normal, viewMatrix );
 
 	vec3 irradiance = shGetIrradianceAt( worldNormal, lightProbe );
 
@@ -49,30 +44,13 @@ vec3 getAmbientLightIrradiance( const in vec3 ambientLightColor ) {
 
 	vec3 irradiance = ambientLightColor;
 
+	#ifndef PHYSICALLY_CORRECT_LIGHTS
+
+		irradiance *= PI;
+
+	#endif
+
 	return irradiance;
-
-}
-
-float getDistanceAttenuation( const in float lightDistance, const in float cutoffDistance, const in float decayExponent ) {
-
-	// based upon Frostbite 3 Moving to Physically-based Rendering
-	// page 32, equation 26: E[window1]
-	// https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf
-	float distanceFalloff = 1.0 / max( pow( lightDistance, decayExponent ), 0.01 );
-
-	if ( cutoffDistance > 0.0 ) {
-
-		distanceFalloff *= pow2( saturate( 1.0 - pow4( lightDistance / cutoffDistance ) ) );
-
-	}
-
-	return distanceFalloff;
-
-}
-
-float getSpotAttenuation( const in float coneCosine, const in float penumbraCosine, const in float angleCosine ) {
-
-	return smoothstep( coneCosine, penumbraCosine, angleCosine );
 
 }
 
@@ -85,11 +63,11 @@ float getSpotAttenuation( const in float coneCosine, const in float penumbraCosi
 
 	uniform DirectionalLight directionalLights[ NUM_DIR_LIGHTS ];
 
-	void getDirectionalLightInfo( const in DirectionalLight directionalLight, out IncidentLight light ) {
+	void getDirectionalDirectLightIrradiance( const in DirectionalLight directionalLight, const in GeometricContext geometry, out IncidentLight directLight ) {
 
-		light.color = directionalLight.color;
-		light.direction = directionalLight.direction;
-		light.visible = true;
+		directLight.color = directionalLight.color;
+		directLight.direction = directionalLight.direction;
+		directLight.visible = true;
 
 	}
 
@@ -107,18 +85,17 @@ float getSpotAttenuation( const in float coneCosine, const in float penumbraCosi
 
 	uniform PointLight pointLights[ NUM_POINT_LIGHTS ];
 
-	// light is an out parameter as having it as a return value caused compiler errors on some devices
-	void getPointLightInfo( const in PointLight pointLight, const in vec3 geometryPosition, out IncidentLight light ) {
+	// directLight is an out parameter as having it as a return value caused compiler errors on some devices
+	void getPointDirectLightIrradiance( const in PointLight pointLight, const in GeometricContext geometry, out IncidentLight directLight ) {
 
-		vec3 lVector = pointLight.position - geometryPosition;
-
-		light.direction = normalize( lVector );
+		vec3 lVector = pointLight.position - geometry.position;
+		directLight.direction = normalize( lVector );
 
 		float lightDistance = length( lVector );
 
-		light.color = pointLight.color;
-		light.color *= getDistanceAttenuation( lightDistance, pointLight.distance, pointLight.decay );
-		light.visible = ( light.color != vec3( 0.0 ) );
+		directLight.color = pointLight.color;
+		directLight.color *= punctualLightIntensityToIrradianceFactor( lightDistance, pointLight.distance, pointLight.decay );
+		directLight.visible = ( directLight.color != vec3( 0.0 ) );
 
 	}
 
@@ -139,32 +116,29 @@ float getSpotAttenuation( const in float coneCosine, const in float penumbraCosi
 
 	uniform SpotLight spotLights[ NUM_SPOT_LIGHTS ];
 
-	// light is an out parameter as having it as a return value caused compiler errors on some devices
-	void getSpotLightInfo( const in SpotLight spotLight, const in vec3 geometryPosition, out IncidentLight light ) {
+	// directLight is an out parameter as having it as a return value caused compiler errors on some devices
+	void getSpotDirectLightIrradiance( const in SpotLight spotLight, const in GeometricContext geometry, out IncidentLight directLight ) {
 
-		vec3 lVector = spotLight.position - geometryPosition;
+		vec3 lVector = spotLight.position - geometry.position;
+		directLight.direction = normalize( lVector );
 
-		light.direction = normalize( lVector );
+		float lightDistance = length( lVector );
+		float angleCos = dot( directLight.direction, spotLight.direction );
 
-		float angleCos = dot( light.direction, spotLight.direction );
+		if ( angleCos > spotLight.coneCos ) {
 
-		float spotAttenuation = getSpotAttenuation( spotLight.coneCos, spotLight.penumbraCos, angleCos );
+			float spotEffect = smoothstep( spotLight.coneCos, spotLight.penumbraCos, angleCos );
 
-		if ( spotAttenuation > 0.0 ) {
-
-			float lightDistance = length( lVector );
-
-			light.color = spotLight.color * spotAttenuation;
-			light.color *= getDistanceAttenuation( lightDistance, spotLight.distance, spotLight.decay );
-			light.visible = ( light.color != vec3( 0.0 ) );
+			directLight.color = spotLight.color;
+			directLight.color *= spotEffect * punctualLightIntensityToIrradianceFactor( lightDistance, spotLight.distance, spotLight.decay );
+			directLight.visible = true;
 
 		} else {
 
-			light.color = vec3( 0.0 );
-			light.visible = false;
+			directLight.color = vec3( 0.0 );
+			directLight.visible = false;
 
 		}
-
 	}
 
 #endif
@@ -199,12 +173,18 @@ float getSpotAttenuation( const in float coneCosine, const in float penumbraCosi
 
 	uniform HemisphereLight hemisphereLights[ NUM_HEMI_LIGHTS ];
 
-	vec3 getHemisphereLightIrradiance( const in HemisphereLight hemiLight, const in vec3 normal ) {
+	vec3 getHemisphereLightIrradiance( const in HemisphereLight hemiLight, const in GeometricContext geometry ) {
 
-		float dotNL = dot( normal, hemiLight.direction );
+		float dotNL = dot( geometry.normal, hemiLight.direction );
 		float hemiDiffuseWeight = 0.5 * dotNL + 0.5;
 
 		vec3 irradiance = mix( hemiLight.groundColor, hemiLight.skyColor, hemiDiffuseWeight );
+
+		#ifndef PHYSICALLY_CORRECT_LIGHTS
+
+			irradiance *= PI;
+
+		#endif
 
 		return irradiance;
 
