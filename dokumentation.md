@@ -12,9 +12,10 @@ ________
 - mehr zu Events: https://www.youtube.com/watch?v=NN0-cg2_k-4
 - Car Model: https://sketchfab.com/3d-models/bmw-326-7706159dcc6442d5a91a9127f8b9d983
 ## 3. Streckengenerierung
-- 
+- Streckenteile: selfmade
 ## 4. HitTest
--
+- Orientierungsscript: https://glitch.com/~launch-aframe-hit-test-simple
+- Erstellung AR-Scene und hittest: https://aframe.io/docs/1.6.0/components/ar-hit-test.html
 _________
 # **Hürden im Projekt**
 ## 1. GUI
@@ -24,6 +25,7 @@ _________
 - anfangs Probleme mit Oculus Quest Controller Erkennung
 - einige Probleme wenn Button gedrückt, dann mache das
 ## 3. Streckengenerierung
-- 
+- Einbindung der Streckengenerierung in das Projekt (verwendet aktuell nur ein paar vorgenerierte Strecken) 
 ## 4. HitTest
-- 
+- Finden von Beispielen mit denen man arbeiten kann (wenig vorerfahrung)
+- manchmal geht der ganze html script nicht mehr
