@@ -1,6 +1,7 @@
 # **MR Projekt Dokumentation**
 ## Victor Knesebeck-Milendonck, Kseniia Kukushkina, Lisa Nguyen
 ## *WiSe 2024/25*
+Projekt läuft auf den Meta-Quests vollständig. Auf Smartphones/PCs/Laptops kann man die Streckenauswahl und Hittest machen, Fahren geht nicht (da kein Controller).
 ________
 # **Verwendete Materialien von:**
 - Materialien vom MR Moodle Kurs
@@ -27,5 +28,7 @@ _________
 ## 3. Streckengenerierung
 - Einbindung der Streckengenerierung in das Projekt (verwendet aktuell nur ein paar vorgenerierte Strecken) 
 ## 4. HitTest
-- Finden von Beispielen mit denen man arbeiten kann (wenig vorerfahrung)
-- manchmal geht der ganze html script nicht mehr
+- Finden von Beispielen mit denen man arbeiten kann (wenig Vorerfahrung)
+- manchmal funktionierte das ganze HTML Script nicht mehr
+
+**für weitere Informationen (weitere Funktionalitäten, wie man fährt, etc.): README.md**
