@@ -511,7 +511,7 @@ function zeigeIframeAlt() {
     } else {
         mode = "L"; //default 
     }
-    let targetURL = "https://erpsee.github.io/MRTest/Ui/src/car_test.html";
+    let targetURL = "https://lptm-ng.github.io/MRProject/src/car_test.html";
         targetURL += "?mode=" + mode;
     window.location.href = targetURL;
 }
